@@ -1,0 +1,1042 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aplikasi POS - Sistem Kasir</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 25px;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+h1 {
+    text-align: center;
+    color: #1d4ed8;
+}
+
+h2 {
+    font-size: 20px;
+    margin-top: 25px;
+}
+
+.summary {
+    display: flex;
+    gap: 15px;
+    margin: 25px 0;
+}
+
+.summary-box {
+    flex: 1;
+    padding: 18px;
+    background: #eff6ff;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.summary-box h3 {
+    margin: 0 0 10px;
+    font-size: 14px;
+}
+
+.summary-box p {
+    font-size: 22px;
+    font-weight: bold;
+    margin: 0;
+    color: #1d4ed8;
+}
+
+.form-section {
+    margin-bottom: 25px;
+}
+
+.form-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+}
+
+button {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    margin: 3px;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+.btn-save { background: #2563eb; margin-top: 12px; }
+.btn-cancel { background: #64748b; }
+.btn-edit { background: #f59e0b; }
+.btn-delete { background: #dc2626; }
+.btn-add { background: #16a34a; }
+.btn-pay { background: #15803d; width: 100%; padding: 13px; font-size: 16px; }
+.btn-print { background: #475569; }
+.btn-remove { background: #dc2626; padding: 7px 10px; }
+
+.search {
+    margin: 15px 0;
+    max-width: 350px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    border: 1px solid #e2e8f0;
+    padding: 11px;
+    text-align: center;
+}
+
+th {
+    background: #1d4ed8;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.empty {
+    padding: 20px;
+    color: #64748b;
+}
+
+.pos-section {
+    margin-top: 30px;
+    padding: 20px;
+    border: 2px solid #bfdbfe;
+    border-radius: 10px;
+    background: #f8fbff;
+}
+
+.pos-form {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 12px;
+    align-items: end;
+}
+
+.field label {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.total-box {
+    background: #eff6ff;
+    padding: 18px;
+    margin-top: 15px;
+    border-radius: 8px;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px 0;
+    font-size: 16px;
+}
+
+.grand-total {
+    font-size: 23px;
+    font-weight: bold;
+    color: #1d4ed8;
+    border-top: 1px solid #bfdbfe;
+    padding-top: 15px;
+}
+
+.payment {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.change {
+    background: #dcfce7;
+    padding: 13px;
+    border-radius: 6px;
+    color: #166534;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.section-title {
+    border-bottom: 2px solid #dbeafe;
+    padding-bottom: 10px;
+    color: #1e40af;
+}
+
+@media(max-width: 700px) {
+    body { padding: 10px; }
+    .container { padding: 15px; }
+    .summary { flex-direction: column; }
+    .form-group, .pos-form, .payment {
+        grid-template-columns: 1fr;
+    }
+    .table-wrapper { overflow-x: auto; }
+}
+
+/* Tampilan khusus ketika mencetak struk */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #receipt, #receipt * {
+        visibility: visible;
+    }
+
+    #receipt {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+        color: black;
+        background: white;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>APLIKASI POS (POINT OF SALE)</h1>
+<p style="text-align:center">
+    Sistem Informasi Inventori dan Transaksi Penjualan
+</p>
+
+<!-- RINGKASAN INVENTORI -->
+<div class="summary">
+
+    <div class="summary-box">
+        <h3>Jumlah Jenis Barang</h3>
+        <p id="totalBarang">0</p>
+    </div>
+
+    <div class="summary-box">
+        <h3>Total Stok Barang</h3>
+        <p id="totalStok">0</p>
+    </div>
+
+    <div class="summary-box">
+        <h3>Total Penjualan</h3>
+        <p id="totalPenjualan">Rp0</p>
+    </div>
+
+</div>
+
+<!-- FORM INVENTORI -->
+<h2 class="section-title">A. Pengelolaan Inventori Barang</h2>
+
+<div class="form-section">
+
+    <h3 id="judulForm">Tambah Barang</h3>
+
+    <form id="formBarang">
+
+        <div class="form-group">
+
+            <input type="text" id="namaBarang"
+                placeholder="Nama Barang" required>
+
+            <input type="number" id="hargaBarang"
+                placeholder="Harga Satuan" min="1" required>
+
+            <input type="number" id="stokBarang"
+                placeholder="Jumlah Stok" min="0" required>
+
+        </div>
+
+        <button type="submit" class="btn-save" id="btnSimpan">
+            + Tambah Barang
+        </button>
+
+        <button type="button" class="btn-cancel"
+            id="btnBatal" onclick="resetForm()" hidden>
+            Batal
+        </button>
+
+    </form>
+</div>
+
+<input type="text" id="cariBarang"
+    class="search" placeholder="Cari barang inventori...">
+
+<div class="table-wrapper">
+<table>
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>Nama Barang</th>
+            <th>Harga Satuan</th>
+            <th>Stok</th>
+            <th>Nilai Stok</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody id="tabelBarang"></tbody>
+</table>
+</div>
+
+<!-- MENU POS / KASIR -->
+<div class="pos-section">
+
+<h2 class="section-title">B. Transaksi Penjualan / Kasir</h2>
+
+<p>Pilih barang yang akan dibeli pelanggan, kemudian masukkan jumlah pembelian.</p>
+
+<div class="pos-form">
+
+    <div class="field">
+        <label>Pilih Barang</label>
+        <select id="pilihBarang">
+            <option value="">-- Pilih Barang --</option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label>Jumlah Beli</label>
+        <input type="number" id="jumlahBeli"
+            min="1" value="1">
+    </div>
+
+    <div class="field">
+        <button type="button" class="btn-add"
+            onclick="tambahKeranjang()">
+            + Masukkan Keranjang
+        </button>
+    </div>
+
+</div>
+
+<h3>Keranjang Belanja</h3>
+
+<div class="table-wrapper">
+<table>
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>Nama Barang</th>
+            <th>Harga</th>
+            <th>Jumlah</th>
+            <th>Subtotal</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+
+    <tbody id="tabelKeranjang"></tbody>
+</table>
+</div>
+
+<!-- TOTAL DAN PEMBAYARAN -->
+<div class="total-box">
+
+    <div class="total-row">
+        <span>Total Jenis Barang:</span>
+        <strong id="jumlahItem">0</strong>
+    </div>
+
+    <div class="total-row grand-total">
+        <span>TOTAL BELANJA:</span>
+        <span id="totalBelanja">Rp0</span>
+    </div>
+
+    <div class="payment">
+
+        <div class="field">
+            <label>Uang Pembayaran (Rp)</label>
+            <input type="number" id="uangBayar"
+                placeholder="Masukkan uang pelanggan" min="0">
+        </div>
+
+        <div>
+            <label><strong>Uang Kembalian</strong></label>
+            <div class="change" id="uangKembalian">
+                Rp0
+            </div>
+        </div>
+
+    </div>
+
+    <button type="button" class="btn-pay"
+        onclick="prosesPembayaran()">
+        PROSES PEMBAYARAN
+    </button>
+
+    <button type="button" class="btn-cancel"
+        onclick="kosongkanKeranjang()">
+        Kosongkan Keranjang
+    </button>
+
+</div>
+</div>
+
+<!-- RIWAYAT TRANSAKSI -->
+<h2 class="section-title">C. Riwayat Transaksi</h2>
+
+<div class="table-wrapper">
+<table>
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>ID Transaksi</th>
+            <th>Tanggal</th>
+            <th>Total Belanja</th>
+            <th>Uang Bayar</th>
+            <th>Kembalian</th>
+        </tr>
+    </thead>
+
+    <tbody id="tabelRiwayat"></tbody>
+</table>
+</div>
+
+<!-- AREA CETAK STRUK -->
+<div id="receipt" style="display:none"></div>
+
+</div>
+
+<script>
+
+// =====================================
+// 1. PENYIMPANAN DATA
+// =====================================
+
+function ambilData(key, nilaiAwal) {
+    try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : nilaiAwal;
+    } catch (error) {
+        return nilaiAwal;
+    }
+}
+
+let dataBarang = ambilData("inventoriBarang", [
+    {id: 1, nama: "Indomie Goreng", harga: 3600, stok: 20},
+    {id: 2, nama: "Galon Le Minerale", harga: 21000, stok: 10},
+    {id: 3, nama: "Gas LPG 3 Kilo", harga: 23000, stok: 15}
+]);
+
+let keranjang = [];
+let riwayat = ambilData("riwayatPOS", []);
+let idEdit = null;
+
+const form = document.getElementById("formBarang");
+
+// =====================================
+// 2. FUNGSI UMUM
+// =====================================
+
+function formatRupiah(angka) {
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        maximumFractionDigits: 0
+    }).format(angka);
+}
+
+function simpanStorage() {
+    localStorage.setItem("inventoriBarang", JSON.stringify(dataBarang));
+    localStorage.setItem("riwayatPOS", JSON.stringify(riwayat));
+}
+
+function escapeHTML(teks) {
+    return String(teks).replace(/[&<>"']/g, karakter => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[karakter]);
+}
+
+// =====================================
+// 3. INVENTORI: CREATE DAN READ
+// =====================================
+
+function tampilkanBarang(kataKunci = "") {
+
+    const tabel = document.getElementById("tabelBarang");
+    tabel.innerHTML = "";
+
+    const hasil = dataBarang.filter(barang =>
+        barang.nama.toLowerCase().includes(kataKunci.toLowerCase())
+    );
+
+    hasil.forEach((barang, index) => {
+
+        tabel.innerHTML += `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHTML(barang.nama)}</td>
+            <td>${formatRupiah(barang.harga)}</td>
+            <td>${barang.stok}</td>
+            <td>${formatRupiah(barang.harga * barang.stok)}</td>
+            <td>
+                <button class="btn-edit"
+                    onclick="editBarang(${barang.id})">
+                    Edit
+                </button>
+
+                <button class="btn-delete"
+                    onclick="hapusBarang(${barang.id})">
+                    Hapus
+                </button>
+            </td>
+        </tr>
+        `;
+    });
+
+    if (hasil.length === 0) {
+        tabel.innerHTML = `
+        <tr><td colspan="6" class="empty">
+            Data barang tidak ditemukan.
+        </td></tr>`;
+    }
+
+    hitungRingkasan();
+    perbaruiPilihanBarang();
+}
+
+form.addEventListener("submit", function(e) {
+
+    e.preventDefault();
+
+    const nama = document.getElementById("namaBarang").value.trim();
+    const harga = Number(document.getElementById("hargaBarang").value);
+    const stok = Number(document.getElementById("stokBarang").value);
+
+    if (!nama || !Number.isSafeInteger(harga) ||
+        harga <= 0 || !Number.isSafeInteger(stok) || stok < 0) {
+        alert("Periksa kembali nama, harga, dan stok barang!");
+        return;
+    }
+
+    if (idEdit === null) {
+
+        dataBarang.push({
+            id: Date.now(),
+            nama,
+            harga,
+            stok
+        });
+
+        alert("Barang berhasil ditambahkan!");
+
+    } else {
+
+        const index = dataBarang.findIndex(
+            barang => barang.id === idEdit
+        );
+
+        if (index !== -1) {
+            dataBarang[index] = {
+                ...dataBarang[index],
+                nama,
+                harga,
+                stok
+            };
+        }
+
+        alert("Data barang berhasil diperbarui!");
+    }
+
+    simpanStorage();
+    resetForm();
+    tampilkanBarang(document.getElementById("cariBarang").value);
+    tampilkanKeranjang();
+});
+
+// =====================================
+// 4. INVENTORI: UPDATE
+// =====================================
+
+function editBarang(id) {
+
+    const barang = dataBarang.find(item => item.id === id);
+    if (!barang) return;
+
+    idEdit = id;
+
+    document.getElementById("namaBarang").value = barang.nama;
+    document.getElementById("hargaBarang").value = barang.harga;
+    document.getElementById("stokBarang").value = barang.stok;
+
+    document.getElementById("judulForm").textContent = "Edit Data Barang";
+    document.getElementById("btnSimpan").textContent = "Simpan Perubahan";
+    document.getElementById("btnBatal").hidden = false;
+
+    document.getElementById("namaBarang").focus();
+}
+
+// =====================================
+// 5. INVENTORI: DELETE
+// =====================================
+
+function hapusBarang(id) {
+
+    if (!confirm("Yakin ingin menghapus barang ini?")) return;
+
+    dataBarang = dataBarang.filter(barang => barang.id !== id);
+    keranjang = keranjang.filter(item => item.id !== id);
+
+    if (idEdit === id) resetForm();
+
+    simpanStorage();
+    tampilkanBarang(document.getElementById("cariBarang").value);
+    tampilkanKeranjang();
+
+    alert("Barang berhasil dihapus!");
+}
+
+function resetForm() {
+
+    form.reset();
+    idEdit = null;
+
+    document.getElementById("judulForm").textContent = "Tambah Barang";
+    document.getElementById("btnSimpan").textContent = "+ Tambah Barang";
+    document.getElementById("btnBatal").hidden = true;
+}
+
+// =====================================
+// 6. PENCARIAN INVENTORI
+// =====================================
+
+document.getElementById("cariBarang").addEventListener("input", function() {
+    tampilkanBarang(this.value);
+});
+
+// =====================================
+// 7. RINGKASAN INVENTORI
+// =====================================
+
+function hitungRingkasan() {
+
+    const totalJenis = dataBarang.length;
+
+    const totalStok = dataBarang.reduce(
+        (total, barang) => total + barang.stok, 0
+    );
+
+    const totalPenjualan = riwayat.reduce(
+        (total, transaksi) => total + transaksi.total, 0
+    );
+
+    document.getElementById("totalBarang").textContent = totalJenis;
+    document.getElementById("totalStok").textContent = totalStok;
+    document.getElementById("totalPenjualan").textContent =
+        formatRupiah(totalPenjualan);
+}
+
+// =====================================
+// 8. POS: PILIHAN BARANG
+// =====================================
+
+function perbaruiPilihanBarang() {
+
+    const select = document.getElementById("pilihBarang");
+    const pilihanSebelumnya = select.value;
+
+    select.innerHTML = '<option value="">-- Pilih Barang --</option>';
+
+    dataBarang.forEach(barang => {
+
+        const option = document.createElement("option");
+
+        option.value = barang.id;
+        option.textContent =
+            `${barang.nama} - ${formatRupiah(barang.harga)} (Stok: ${barang.stok})`;
+
+        select.appendChild(option);
+    });
+
+    if (dataBarang.some(b => String(b.id) === pilihanSebelumnya)) {
+        select.value = pilihanSebelumnya;
+    }
+}
+
+// =====================================
+// 9. POS: MENAMBAHKAN KE KERANJANG
+// =====================================
+
+function tambahKeranjang() {
+
+    const id = Number(document.getElementById("pilihBarang").value);
+    const jumlah = Number(document.getElementById("jumlahBeli").value);
+
+    if (!id || !Number.isSafeInteger(jumlah) || jumlah < 1) {
+        alert("Silakan pilih barang dan masukkan jumlah pembelian!");
+        return;
+    }
+
+    const barang = dataBarang.find(item => item.id === id);
+
+    if (!barang) return;
+
+    const itemLama = keranjang.find(item => item.id === id);
+    const jumlahSekarang = itemLama ? itemLama.jumlah : 0;
+
+    if (jumlahSekarang + jumlah > barang.stok) {
+        alert(`Stok ${barang.nama} tidak mencukupi! Stok tersedia: ${barang.stok}`);
+        return;
+    }
+
+    if (itemLama) {
+        itemLama.jumlah += jumlah;
+    } else {
+        keranjang.push({
+            id: barang.id,
+            jumlah: jumlah
+        });
+    }
+
+    document.getElementById("jumlahBeli").value = 1;
+
+    tampilkanKeranjang();
+}
+
+// =====================================
+// 10. POS: MENAMPILKAN KERANJANG
+// =====================================
+
+function hitungTotal() {
+
+    return keranjang.reduce((total, item) => {
+
+        const barang = dataBarang.find(b => b.id === item.id);
+
+        if (!barang) return total;
+
+        return total + (barang.harga * item.jumlah);
+
+    }, 0);
+}
+
+function tampilkanKeranjang() {
+
+    const tabel = document.getElementById("tabelKeranjang");
+    tabel.innerHTML = "";
+
+    keranjang.forEach((item, index) => {
+
+        const barang = dataBarang.find(b => b.id === item.id);
+        if (!barang) return;
+
+        const subtotal = barang.harga * item.jumlah;
+
+        tabel.innerHTML += `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHTML(barang.nama)}</td>
+            <td>${formatRupiah(barang.harga)}</td>
+            <td>${item.jumlah}</td>
+            <td>${formatRupiah(subtotal)}</td>
+            <td>
+                <button class="btn-remove"
+                    onclick="hapusKeranjang(${item.id})">
+                    Hapus
+                </button>
+            </td>
+        </tr>
+        `;
+    });
+
+    if (keranjang.length === 0) {
+        tabel.innerHTML = `
+        <tr><td colspan="6" class="empty">
+            Keranjang belanja masih kosong.
+        </td></tr>`;
+    }
+
+    const total = hitungTotal();
+
+    document.getElementById("jumlahItem").textContent =
+        keranjang.reduce((sum, item) => sum + item.jumlah, 0);
+
+    document.getElementById("totalBelanja").textContent =
+        formatRupiah(total);
+
+    hitungKembalian();
+}
+
+// =====================================
+// 11. POS: HAPUS BARANG DARI KERANJANG
+// =====================================
+
+function hapusKeranjang(id) {
+
+    keranjang = keranjang.filter(item => item.id !== id);
+
+    tampilkanKeranjang();
+}
+
+// Mengosongkan keranjang
+function kosongkanKeranjang() {
+
+    if (keranjang.length === 0) return;
+
+    if (confirm("Kosongkan seluruh keranjang belanja?")) {
+        keranjang = [];
+        document.getElementById("uangBayar").value = "";
+        tampilkanKeranjang();
+    }
+}
+
+// =====================================
+// 12. POS: HITUNG UANG KEMBALIAN
+// =====================================
+
+function hitungKembalian() {
+
+    const total = hitungTotal();
+    const bayar = Number(document.getElementById("uangBayar").value) || 0;
+
+    const kembali = bayar - total;
+
+    document.getElementById("uangKembalian").textContent =
+        formatRupiah(Math.max(0, kembali));
+
+    document.getElementById("uangKembalian").style.color =
+        kembali < 0 ? "#dc2626" : "#166534";
+}
+
+document.getElementById("uangBayar").addEventListener(
+    "input", hitungKembalian
+);
+
+// =====================================
+// 13. POS: PROSES PEMBAYARAN
+// =====================================
+
+function prosesPembayaran() {
+
+    if (keranjang.length === 0) {
+        alert("Keranjang belanja masih kosong!");
+        return;
+    }
+
+    const total = hitungTotal();
+    const bayar = Number(document.getElementById("uangBayar").value);
+
+    if (!Number.isSafeInteger(bayar) || bayar < total) {
+        alert("Uang pembayaran tidak mencukupi!");
+        return;
+    }
+
+    // Memeriksa ulang seluruh stok sebelum transaksi
+    for (const item of keranjang) {
+
+        const barang = dataBarang.find(b => b.id === item.id);
+
+        if (!barang || barang.stok < item.jumlah) {
+            alert("Stok barang tidak mencukupi. Silakan periksa keranjang!");
+            return;
+        }
+    }
+
+    const daftarBarang = keranjang.map(item => {
+
+        const barang = dataBarang.find(b => b.id === item.id);
+
+        return {
+            id: barang.id,
+            nama: barang.nama,
+            harga: barang.harga,
+            jumlah: item.jumlah,
+            subtotal: barang.harga * item.jumlah
+        };
+    });
+
+    const kembalian = bayar - total;
+
+    // Mengurangi stok barang secara otomatis
+    keranjang.forEach(item => {
+
+        const barang = dataBarang.find(b => b.id === item.id);
+
+        barang.stok -= item.jumlah;
+    });
+
+    // Membuat transaksi baru
+    const transaksi = {
+        id: "TRX-" + Date.now(),
+        tanggal: new Date().toLocaleString("id-ID"),
+        items: daftarBarang,
+        total: total,
+        bayar: bayar,
+        kembalian: kembalian
+    };
+
+    riwayat.unshift(transaksi);
+
+    // Menyimpan transaksi dan inventori
+    simpanStorage();
+
+    // Menampilkan dan mencetak struk
+    buatStruk(transaksi);
+
+    // Mengosongkan keranjang
+    keranjang = [];
+
+    document.getElementById("uangBayar").value = "";
+    document.getElementById("jumlahBeli").value = 1;
+
+    tampilkanBarang(document.getElementById("cariBarang").value);
+    tampilkanKeranjang();
+    tampilkanRiwayat();
+
+    alert("Pembayaran berhasil! Transaksi telah disimpan.");
+}
+
+// =====================================
+// 14. RIWAYAT TRANSAKSI
+// =====================================
+
+function tampilkanRiwayat() {
+
+    const tabel = document.getElementById("tabelRiwayat");
+    tabel.innerHTML = "";
+
+    riwayat.forEach((trx, index) => {
+
+        tabel.innerHTML += `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHTML(trx.id)}</td>
+            <td>${escapeHTML(trx.tanggal)}</td>
+            <td>${formatRupiah(trx.total)}</td>
+            <td>${formatRupiah(trx.bayar)}</td>
+            <td>${formatRupiah(trx.kembalian)}</td>
+        </tr>
+        `;
+    });
+
+    if (riwayat.length === 0) {
+        tabel.innerHTML = `
+        <tr><td colspan="6" class="empty">
+            Belum ada transaksi penjualan.
+        </td></tr>`;
+    }
+
+    hitungRingkasan();
+}
+
+// =====================================
+// 15. MEMBUAT STRUK PEMBAYARAN
+// =====================================
+
+function buatStruk(trx) {
+
+    let detailBarang = "";
+
+    trx.items.forEach(item => {
+
+        detailBarang += `
+        <tr>
+            <td>${escapeHTML(item.nama)}</td>
+            <td>${item.jumlah}</td>
+            <td>${formatRupiah(item.subtotal)}</td>
+        </tr>
+        `;
+    });
+
+    document.getElementById("receipt").innerHTML = `
+        <div style="max-width:400px;margin:auto;font-family:monospace">
+
+            <h2 style="text-align:center">TOKO INVENTORI</h2>
+            <p style="text-align:center">STRUK PEMBAYARAN</p>
+
+            <hr>
+
+            <p>No: ${escapeHTML(trx.id)}</p>
+            <p>Tanggal: ${escapeHTML(trx.tanggal)}</p>
+
+            <hr>
+
+            <table style="width:100%;border-collapse:collapse">
+                <thead>
+                    <tr>
+                        <th>Barang</th>
+                        <th>Qty</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${detailBarang}
+                </tbody>
+            </table>
+
+            <hr>
+
+            <p>Total: <strong>${formatRupiah(trx.total)}</strong></p>
+            <p>Bayar: ${formatRupiah(trx.bayar)}</p>
+            <p>Kembalian: ${formatRupiah(trx.kembalian)}</p>
+
+            <hr>
+
+            <p style="text-align:center">
+                Terima kasih telah berbelanja!
+            </p>
+
+        </div>
+    `;
+
+    document.getElementById("receipt").style.display = "block";
+    window.print();
+    document.getElementById("receipt").style.display = "none";
+}
+
+// =====================================
+// 16. INISIALISASI APLIKASI
+// =====================================
+
+simpanStorage();
+tampilkanBarang();
+tampilkanKeranjang();
+tampilkanRiwayat();
+
+</script>
+
+</body>
+</html>
